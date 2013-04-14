@@ -8,7 +8,7 @@ vYacht Wifi Router. This router allows to connect directly to the NMEA
 network and distribute navigational information via Wifi or ethernet.
 
 This router is certainly the easiest and most cost effective gateway between 
-the NMEA on-board network and instruments and your PC or iPad/Android. All 
+the NMEA boat on-board network and instruments and your PC or iPad/Android. All 
 connections are fully isolated to avoid ground loops.
 
 The router operates with the typical on-board 12V power supply. It has 
