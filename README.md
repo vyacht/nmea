@@ -34,6 +34,12 @@ private use.
 NMEA Wifi Router and other designs by vyacht.net are licensed under a Creative Commons 
 Attribution-NonCommercial-ShareAlike 3.0 Unported License.
 
+The NMEA Wifi Router uses a RT3050 based Carambola as CPU and Wifi module. The Carambola 
+board is unfortuntely based on a proprietary design and Ralink releases even data sheets 
+only under NDA. But the Carambola board is currently the most cost effective and powerful 
+Wifi and CPU solution known to me.
+
+
 Version
 ====
 
