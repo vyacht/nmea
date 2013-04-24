@@ -1,0 +1,75 @@
+#!/bin/sh /etc/rc.common
+# (C) 2008 openwrt.org
+START=45
+
+NAME=iomode
+PROG=io
+
+handle_device() {
+	
+        # ./io 0x10000060 0x01
+	local address="0x10000060"
+	local iomode="UARTF"
+	local iomask=0x0
+	local device=""
+	local speed=""
+	
+        local cfg="$1"
+        config_get type "$cfg" TYPE
+                
+	config_get iomode "$cfg" iomode
+	config_get device "$cfg" device
+	config_get speed "$cfg" speed
+	
+	echo "> setting speed for device: $device going to $speed" 
+	
+	[ -n "$speed" ] || speed=4800
+	
+	[ $device = "/dev/ttyS0" ] && { 
+	
+		case "$iomode" in
+		"UARTF")
+			iomask=0x0
+			;;
+		"PCM_UART")
+			iomask=0x1
+			;;
+		"PCM_I2C")
+			iomask=0x2
+			;;
+		"I2S_UARTF")
+			iomask=0x3
+			;;
+		"PCM_GPIO")
+			iomask=0x4
+			;;
+		"GPIO_UARTF")
+			iomask=0x5
+			;;
+		"GPIO_I2S")
+			iomask=0x6
+			;;
+		"GPIO")
+			iomask=0x7
+			;;
+		*)
+        		logger -t "$NAME" "No known io mode for second UART/GPIO. Exiting."
+        		exit 1
+			;;
+		esac
+	
+		echo "$NAME" "Setting iomode to $iomode"
+		logger -t "$NAME" "Setting iomode to $iomode"
+		$PROG $address $iomask
+	} 
+	
+	echo "setting speed for device: $device going to $speed" 
+	stty -F $device $speed
+}
+
+start() {
+	echo "start ..." 
+	config_load iomode
+	config_foreach handle_device 'dev'
+} 
+
