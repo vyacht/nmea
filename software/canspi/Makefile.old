@@ -1,0 +1,33 @@
+include $(TOPDIR)/rules.mk
+
+PKG_NAME:=iomode
+PKG_VERSION:=1.0.0
+PKG_RELEASE:=1
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/iomode-$(PKG_VERSION)
+
+include $(INCLUDE_DIR)/package.mk
+
+define Package/iomode
+  SECTION:=net
+  CATEGORY:=Network
+  DEFAULT:=y
+  TITLE:=Setting RT305x io mode
+  #DESCRIPTION:=This variable is obsolete. use the Package/name/description define instead!
+endef
+
+define Package/iomode/description
+  Tool to set iomode automatically at startup.
+endef
+
+define Build/Configure
+endef
+
+define Package/iomode/install
+        $(INSTALL_DIR) $(1)/etc/config
+        $(INSTALL_CONF) ./files/iomode.config $(1)/etc/config/iomode
+        $(INSTALL_DIR) $(1)/etc/init.d
+        $(INSTALL_BIN) ./files/iomode.init $(1)/etc/init.d/iomode
+endef
+
+$(eval $(call BuildPackage,iomode))

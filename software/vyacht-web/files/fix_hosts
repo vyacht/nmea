@@ -1,0 +1,34 @@
+#!/bin/sh /etc/rc.common
+# (C) 2008 openwrt.org
+START=45
+
+NAME=fix_hosts
+
+handle_interface() {
+	
+        local cfg="$1"
+        local ip=""
+        local name=""
+	local hostname="$(uci_get system.@system[0].hostname)"
+        
+        config_get type "$cfg" TYPE
+                
+	config_get proto "$cfg" proto
+	
+	[ $proto = "static" ] && {
+        	config_get ifname "$cfg" ifname
+        	config_get ipaddr "$cfg" ipaddr
+        	[ $ifname = "lo" ] || {
+        		echo "$ipaddr $hostname" >> /etc/hosts
+	        }
+        }
+}
+
+start() {
+        echo "127.0.0.1 localhost" > /etc/hosts
+        
+	
+	config_load network
+	config_foreach handle_interface 'interface'
+} 
+

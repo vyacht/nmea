@@ -1,0 +1,565 @@
+<?php session_start();?>
+<!-- DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>vYacht Yacht automation</title>
+<style type="text/css" media="all">@import "/global.css";</style>
+<script src="/jquery-latest.js"></script>
+<script src="/spin.js"></script>
+<style type="text/css">
+</style>
+
+<script  type="text/javascript">
+function changeWifiIP(value) {
+
+        var sw = "on";
+
+	if(document.getElementById('wifi_off').checked) {
+        	sw = "off";
+	}
+        var params = "ip=" + value + "&switch=" + sw;
+        
+	var spinner = showSpinningWheel('NMEA1Waiter');
+	setTimeout("timeout()", 10000);
+
+        $.ajax({
+                url: "/lua/changeWifi",
+                type: "GET",
+                data: params,
+                dataType: "json",
+                success: function(res) {
+                	spinner.stop();
+			if((res != null) && res.error) {
+				alert(res.error);
+			}
+                },
+                error: function(xhr, status, thrown) {
+                	spinner.stop();
+                        console.log(status);
+                        console.log(thrown);
+                }
+        });
+}
+
+function changeWifiPwd(value) {
+  var params = "key=" + value;
+
+  var spinner = showSpinningWheel('NMEA1Waiter');
+  setTimeout("timeout()", 10000);
+  $.ajax({
+    url: "/lua/changeWifi",
+    type: "GET",
+    data: params,
+    dataType: "json",
+    success: function(res) {
+                	spinner.stop();
+			if(res.error) {
+				alert(res.error);
+			}
+    },
+    error: function(xhr, status, thrown) {
+      spinner.stop();
+      console.log(status);
+      console.log(thrown);
+    }
+  });
+}
+
+function changeGpsPort(value) {
+
+        var params = "port=" + value;
+
+	var spinner = showSpinningWheel('NMEA1Waiter');
+	setTimeout("timeout()", 10000);
+        $.ajax({
+                url: "/lua/changeGps",
+                type: "GET",
+                data: params,
+                dataType: "json",
+                success: function(res) {
+                	spinner.stop();
+			if(res.error) {
+				alert(res.error);
+			}
+                },
+                error: function(xhr, status, thrown) {
+                	spinner.stop();
+                        console.log(status);
+                        console.log(thrown);
+                }
+        });
+}
+
+function changeEthIP(device, value) {
+        var lanwan = "";
+        if(device == "eth01") {
+		lanwan = "lan";
+        } else {
+		if(document.getElementById('wan_wan').checked) {
+			lanwan = "wan";
+		} else if (document.getElementById('wan_lan').checked) {
+			lanwan = "lan";
+		}
+	}
+	
+        /*  value is the new IP address and the device */
+        var params = "ip=" + value + "&device=" + device + "&wan=" + lanwan;
+        
+	var spinner = showSpinningWheel('NMEA1Waiter');
+	setTimeout("timeout()", 10000);
+        $.ajax({
+                url: "/lua/changeEthernet",
+                type: "GET",
+                data: params,
+                dataType: "json",
+                success: function(res) {
+                	spinner.stop();
+			if(res.error) {
+				alert(res.error);
+			}
+                },
+                error: function(xhr, status, thrown) {
+                	spinner.stop();
+			alert(status);
+                        console.log(status);
+                        console.log(thrown);
+                }
+        });
+}
+
+function changeNMEASpeed(device, value) {
+
+        var params = "speed=" + value + "&device=" + device;
+        console.log("sending: " + params);
+
+	var spinner = showSpinningWheel('NMEA1Waiter');
+	setTimeout("timeout()", 10000);
+        $.ajax({
+                url: "/lua/changeNMEA",
+                type: "GET",
+                data: params,
+                dataType: "json",
+                success: function(res) {
+                	spinner.stop();
+			if(res.error) {
+				alert(res.error);
+			}
+                },
+                error: function(xhr, status, thrown) {
+                	spinner.stop();
+			alert(status);
+                        console.log(status);
+                        console.log(thrown);
+                }
+        });
+}
+
+function updateStatus(res) {
+	document.getElementById('Hostname').innerHTML = res.Hostname;
+	document.getElementById('Firmware').innerHTML = res.Firmware;
+	<!-- document.getElementById('Time').innerHTML = res.Time; -->
+	document.getElementById('Uptime').innerHTML = res.Uptime;
+	document.getElementById('NMEA0Status').innerHTML = res.NMEAStatus[0].DeviceName;
+	document.getElementById('NMEA0Speed').value = res.NMEAStatus[0].Speed;
+	document.getElementById('NMEA1Status').innerHTML = res.NMEAStatus[1].DeviceName;
+	document.getElementById('NMEA1Speed').value = res.NMEAStatus[1].Speed;
+	document.getElementById('GpsStatus').innerHTML = res.GpsStatus.Status;
+	document.getElementById('GpsPort').value = res.GpsStatus.Port;
+	
+	var ip = "0.0.0.0";
+	var pref = "0";
+	document.getElementById('WifiStatus').innerHTML = res.NetDevices.wifi.status;
+	ip = res.NetDevices.wifi.HostIP;
+	pref = res.NetDevices.wifi.prefix;
+	if((ip == "undefined") || (ip == "") || (pref == "undefined") || (pref == "")) {
+		ip = "0.0.0.0"; pref = "0";
+	}
+	
+	if(res.NetDevices.wifi.status == "Up") {
+		document.getElementById('wifi_off').checked = false;
+		document.getElementById('wifi_on').checked = true;
+	} else {
+		document.getElementById('wifi_off').checked = true;
+		document.getElementById('wifi_on').checked = false;
+	}
+	toggleWifi();
+	
+	document.getElementById('WifiIP').value = ip + "/" + pref;
+	document.getElementById('WifiPwd').value = res.NetDevices.wifi.key;
+	
+	if(res.NetDevices.eth02.type == "wan") {
+    		document.getElementById('wan_wan').checked = true;
+    		document.getElementById('wan_lan').checked = false;
+		document.getElementById('Eth2IP').disabled = true;
+	} else {
+		document.getElementById('Eth2IP').disabled = false;
+    		document.getElementById('wan_wan').checked = false;
+    		document.getElementById('wan_lan').checked = true;
+	}
+
+	ip = "0.0.0.0";
+	pref = "0";
+	if(res.NetDevices.eth01.installed) {	
+		ip = res.NetDevices.eth01.HostIP;
+		pref = res.NetDevices.eth01.prefix;
+		if((ip == "undefined") || (ip == "") || (pref == "undefined") || (pref == "")) {
+			ip = "0.0.0.0"; pref = "0";
+		}
+		document.getElementById('Eth1IP').value = ip + "/" + pref; 
+		document.getElementById('Eth1IP').disabled = false;
+	} else {
+		document.getElementById('Eth1IP').disabled = true;
+	}
+	document.getElementById('Eth1IP').value = ip + "/" + pref; 
+	document.getElementById('Eth1Status').innerHTML = res.NetDevices.eth01.status;
+	
+	ip = "0.0.0.0";
+	pref = "0";
+	var dis = false;
+	if(res.NetDevices.eth02.installed) {	
+		ip = res.NetDevices.eth02.HostIP;
+		pref = res.NetDevices.eth02.prefix;
+		if((typeof ip == "undefined") || (ip == "") || (typeof pref == "undefined") || (pref == "")) {
+			ip = "0.0.0.0"; pref = "0";
+			dis = true;
+		}
+	} else {
+		dis = true;
+	}
+	document.getElementById('Eth2IP').value = ip + "/" + pref;
+	document.getElementById('Eth2IP').disabled = dis;
+	document.getElementById('Eth2Status').innerHTML = res.NetDevices.eth02.status;
+}
+
+function togglePasswd(value) {
+	console.log(value);
+}
+
+function toggleLANWAN() {
+  if(document.getElementById('wan_wan').checked) {
+		document.getElementById('Eth2IP').disabled = true;
+  } else {
+		document.getElementById('Eth2IP').disabled = false;
+  } 
+}
+
+function toggleWifi() {
+  if(document.getElementById('wifi_on').checked) {
+	document.getElementById('WifiIP').disabled = false;
+	document.getElementById('WifiPwd').disabled = false;
+  } else if(document.getElementById('wifi_off').checked) {
+	document.getElementById('WifiIP').disabled = true;
+	document.getElementById('WifiPwd').disabled = true;
+  } 
+}
+
+var spinningWheel = null;
+
+function showSpinningWheel(element) {
+  var opts = {
+    lines: 13, // The number of lines to draw
+    length: 20, // The length of each line
+    width: 10, // The line thickness
+    radius: 30, // The radius of the inner circle
+    corners: 1, // Corner roundness (0..1)
+    rotate: 0, // The rotation offset
+    direction: 1, // 1: clockwise, -1: counterclockwise
+    color: '#000', // #rgb or #rrggbb
+    speed: 1, // Rounds per second
+    trail: 60, // Afterglow percentage
+    shadow: false, // Whether to render a shadow
+    hwaccel: false, // Whether to use hardware acceleration
+    className: 'spinner', // The CSS class to assign to the spinner
+    zIndex: 2e9, // The z-index (defaults to 2000000000)
+    top: 'auto', // Top position relative to parent in px
+      left: 'auto' // Left position relative to parent in px
+  };
+  var target = $('#NMEA1Waiter').get(0);
+  if (!spinningWheel) {
+	  spinningWheel = new Spinner(opts).spin(target);
+  } else {
+  	  spinningWheel.spin(target);
+  }
+  return spinningWheel;
+}
+
+function timeout() {
+  	spinningWheel.stop();
+}
+
+function GetStatus() {
+	var spinner = showSpinningWheel('NMEA1Waiter');
+	setTimeout("timeout()", 10000);
+	
+        var params = "id=this";
+        $.ajax({
+                url: "/lua/getStatus",
+		type: "GET",
+		data: params,
+		dataType: "json",
+                success: function(res) {
+                	spinner.stop();
+			updateStatus(res);
+                },
+		error: function(xhr, status, thrown) {
+                	spinner.stop();
+			alert(status);
+		}
+	});
+}
+</script>
+</head>
+<body>
+<div id="wrapper">
+	<!-- 
+	<div id="header">
+		<div id="logobox">
+			<h1>vYacht</h1>
+			<h2>Yacht automation</h2>
+		</div>
+		<div id="headimg">&nbsp;</div>
+	</div>
+	--!>
+
+	<!--
+	<div id="topnavi">
+		<div class="spacing1">
+			<ul id="topnavi_items">
+				<li id="products"><a href="/index.html?view=products" title="item">Wifi Router</a></li>
+				<li id="about"><a href="/index.html?view=about" title="item">About NMEA</a></li>
+				<li id="inavx"><a href="/inavx" title="item">iNavX</a></li>
+			</ul>
+		</div>
+	</div>
+	--!>
+	<div id="bodybox">
+		<div class="content">
+		   <image src="img/glyphicons_085_repeat.png" width=13 height=13 onClick="GetStatus();">
+		   Update View
+                <table xmlns="http://www.w3.org/1999/xhtml">
+                <thead><tr><th colspan="3">Info</th></tr></thead>
+                <tbody> 
+                <tr> 
+                    <th width="25%">Name</th>
+                    <td width="75%" colspan=2><div id='Hostname'>...</div></td>
+                </tr>
+                <tr>
+                    <th width="25%">Firmware</th>
+                    <td width="75%" colspan=2><div id='Firmware'>...</div></td>
+                </tr>
+                <!--
+                <tr>
+                    <th width="25%">Time</th>
+                    <td width="75%" colspan=2><div id='Time'>...</div></td>
+                </tr>
+                -->
+                <tr>
+                    <th width="25%">Uptime</th>
+                    <td width="75%" colspan=2><div id='Uptime'>...</div></td>
+                </tr>
+                </body>
+                <thead><tr><th colspan="3">NMEA Network</th></tr></thead>
+                <tbody> 
+                <tr>
+                    <th width="25%">GPS port (network)</th>
+                    <td width="50%">
+			<form name="input" action="" method="post">
+			<input id='GpsPort' type="text" name="gpsport" value="">
+			<input type="button" value="Change" onClick="changeGpsPort(this.form.gpsport.value)">
+			</form> 
+		    </td>
+                    <td width="25%">
+			<div id='GpsStatus'>...</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th width="25%"> NMEA 0183 I</th>
+                    <td width="50%">
+			<form name="input" action="" method="post">
+			<select name="nmea0speed" id="NMEA0Speed">
+			<option value="2400">2400</option>
+			<option value="4800">4800 (standard)</option>
+			<option value="9600">9600</option>
+			<option value="38400">38.4 (AIS)</option>
+			<option value="115200">115.2k</option>
+			</select>
+			<input type="button" value="Change" onClick="changeNMEASpeed(0, this.form.nmea0speed.value); return false;">
+			</form>
+		    </td>
+                    <td width="25%">
+			<div id='NMEA0Status'>...</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th width="25%">NMEA 0183 II</th>
+                    <td width="50%">
+			<form name="input" action="" method="post">
+			<select name="nmea1speed" id="NMEA1Speed">
+			<option value="2400">2400</option>
+			<option value="4800">4800 (standard)</option>
+			<option value="9600">9600</option>
+			<option value="38400">38.4k (AIS)</option>
+			<option value="115200">115.2k</option>
+			</select>
+			<input type="button" value="Change" onClick="changeNMEASpeed(1, this.form.nmea1speed.value); return false;">
+			</form>
+			<div id='NMEA1Waiter'></div>
+		    </td>
+                    <td width="25%">
+			<div id='NMEA1Status'>...</div>
+			
+                    </td>
+                </tr>
+                </body>
+                <thead><tr><th colspan="3">TCP/IP Network</th></tr></thead>
+                <tbody> 
+                <tr>
+                    <th width="25%">WiFi</th>
+                    <td width="50%">
+			<form name="input" action="" method="post">
+			<input id="wifi_on" type="radio" name="wifitoggle" value="on" onClick="toggleWifi()">On
+			<input id="wifi_off" type="radio" name="wifitoggle" value="off" onClick="toggleWifi()">Off<br>
+			<input id='WifiIP' type="text" name="wifiip" value="">
+        		<input type="button" value="Change" onClick="changeWifiIP(this.form.wifiip.value); return false;">
+			</form> 
+		    </td>
+                    <td width="25%">
+			<div id='WifiStatus'>...</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th width="25%">WiFi password</th>
+                    <td width="50%">
+			<form name="input" action="" method="post">
+			<input id='WifiPwd' type="password" name="wifipwd" value="" class="showpassword">
+        		<input type="button" value="Change"
+        		  onClick="changeWifiPwd(this.form.wifipwd.value); return false;">
+			<div id="showpasswordcb-placeholder"/>
+			</form> 
+		    </td>
+                    <td width="25%">
+                    </td>
+                </tr>
+                <tr>
+                    <th width="25%">Ethernet 1</th>
+                    <td width="50%">
+			<form name="input" action="" method="post">
+  			<input id='Eth1IP' type="text" name="eth1ip" value="">
+        		<input type="button" value="Change" onClick="changeEthIP('eth01', this.form.eth1ip.value); return false;">
+			</form> 
+		    </td>
+                    <td width="25%">
+			<div id='Eth1Status'>...</div>
+                    </td>
+                </tr>
+                <tr>
+                    <th width="25%">Ethernet 2</th>
+                    <td width="50%">
+			<form name="input" action="" method="post">
+			<input id="wan_wan" type="radio" name="wan" value="wan" onClick="toggleLANWAN()">WAN (Internet)
+			<input id="wan_lan" type="radio" name="wan" value="lan" onClick="toggleLANWAN()">LAN<br>
+  			<input id='Eth2IP' type="text" name="eth2ip" value="">
+        		<input type="button" value="Change" onClick="changeEthIP('eth02', this.form.eth2ip.value); return false;">
+			</form> 
+		    </td>
+                    <td width="25%">
+			<div id='Eth2Status'>...</div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <th width="25%">Update</th>
+                    <td width="50%">
+                      <form id="fileUploadForm" enctype="multipart/form-data">
+                        <input name="file" type="file" />
+                        <input id="fileUpload" type="button" value="Upgrade"/>
+                      </form>
+		    </td>
+                    <td width="25%">
+                      <progress></progress> 
+                    </td>
+                </tr>
+                
+            </table>
+	    <script type="text/javascript">
+	    
+	        function progressHandlingFunction(e){
+	            if(e.lengthComputable){
+	                    $('progress').attr({value:e.loaded,max:e.total});
+	            }
+	        }
+	                        
+	        $('#fileUpload').click(function() {
+	        
+                  var formData = new FormData($('#fileUploadForm')[0]);
+                  $.ajax({
+	            url: '/lua/upload',  //Server script to process data
+	            type: 'POST',
+  	            xhr: function() {  // Custom XMLHttpRequest
+	              var myXhr = $.ajaxSettings.xhr();
+	              if(myXhr.upload) { // Check if upload property exists
+	                myXhr.upload.addEventListener('progress', progressHandlingFunction, false); // For handling the progress of the upload
+	              }
+	              return myXhr;
+	            },
+	            // Ajax events
+	            beforeSend: function() {                                                                                                  
+                      $('progress').attr({value:0, max:100});
+	            },
+	            success: function(res) {
+	              if(res.error) {                                                                                                   
+	                alert(res.error);                                                                                         
+	              } else {
+	                alert("Success. Please restart the router to be sure to apply the changes.");                                                                                         
+	              }
+                      $('progress').attr({value:100, max:100});
+	            },
+	            error: function(xhr, status, thrown) {
+                      $('progress').attr({value:0, max:100});
+                      console.log("error");
+                      console.log(thrown);
+                      console.log(status);
+	            },
+	            // Form data
+	            data: formData,
+	            // Options to tell jQuery not to process data or worry about content-type.
+	            cache: false,
+	            contentType: false,
+	            processData: false
+	          });
+	        });
+	        
+		$(function(){
+		        $(".showpassword").each(function(index,input) {
+                	var $input = $(input);
+			var $placeholder = $('#showpasswordcb-placeholder');
+	                $('<label class="showpasswordlabel"/>').append(
+        	                $("<input type='checkbox' class='showpasswordcheckbox' />").click(function() {
+                	                var change = $(this).is(":checked") ? "text" : "password";
+                        	        var rep = $("<input type='" + change + "' />")
+                                	        .attr("id", $input.attr("id"))
+                                        	.attr("name", $input.attr("name"))
+	                                        .attr('class', $input.attr('class'))
+        	                                .val($input.val())
+                	                        .insertBefore($input);
+                        	        $input.remove();
+                                	$input = rep;
+	                         })
+        	        ).append($("<span/>").text("Show password")).insertAfter($placeholder);
+        		});
+		});
+	   </script>
+
+		</div>
+	</div>
+	<div id="footer">
+		<p>Copyright 2012 vYacht.net. All Rights Reserved. | Design by <a href="http://www.pspspiele.org/">PSP Spiele</a></p>
+	</div>
+</div>
+<script type="text/javascript">
+  GetStatus();
+  $('progress').attr({value:0, max:100}); 
+</script>
+</body>
+</html>
