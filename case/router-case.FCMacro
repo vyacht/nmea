@@ -1,0 +1,383 @@
+import Part, FreeCAD, math
+from FreeCAD import Base
+
+def nose_and_lockin(case, cube, lock):
+    if case == 1:
+        if cube == 1:
+            nose = Part.makeBox(4,2,3)
+            nose.translate(Base.Vector(2.5, 0, 0))
+        else:
+            edge1 = Part.makeLine((0,0,0), (1.5,0,0))
+            edge2 = Part.makeLine((1.5,0,0), (0,3,0))
+            edge3 = Part.makeLine((0,3,0), (0,0,0))
+            wire1 = Part.Wire([edge1,edge2,edge3]) 
+            face = Part.Face(wire1)
+            tri = face.extrude(Base.Vector(0, 0, 4))
+            tri.translate(Base.Vector(0, 0, -2))
+            tri.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0),  90)
+            tri.rotate(Base.Vector(0,0,0), Base.Vector(0,1,0), 180)
+            tri.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 270)
+            tri.translate(Base.Vector(2.5 + 2, 0, 3))
+            nose = tri
+	return nose
+  
+def lockins():
+	c1 = Part.makeBox(5, 2, 2.5)
+	c1.translate(Base.Vector(2, 0, 3.5))
+	
+	c2 = Part.makeBox(6, 4, 6)
+	c2.translate(Base.Vector(-4, 0, 0))
+	
+	c3 = Part.makeBox(6, 4, 6)
+	c3.translate(Base.Vector(7, 0, 0))
+	
+	lockin = c1.fuse(c2)
+	lockin = lockin.fuse(c3)
+	
+	return lockin
+
+def noseAndLockins():
+
+    n1 = nose_and_lockin(case, 0, lock)
+    n1.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0), 180)
+    n1.rotate(Base.Vector(0,0,0), Base.Vector(0,1,0),   0)
+    n1.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 270)
+    n1.translate(Base.Vector(x_width - walls, walls + 7 + 16.5 + 18 + 2.5 + 3, btn_walls + height))
+
+    n2 = nose_and_lockin(case, 1, lock)
+    n2.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0), 180)
+    n2.rotate(Base.Vector(0,0,0), Base.Vector(0,1,0),   0)
+    n2.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1),  90)
+    n2.translate(Base.Vector(walls, walls + 10 + 2.5 + 2, btn_walls + height))
+
+    n3 = nose_and_lockin(case, 1, lock)
+    n3.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0), 180)
+    n3.rotate(Base.Vector(0,0,0), Base.Vector(0,1,0),   0)
+    n3.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1),  90)
+    n3.translate(Base.Vector(walls, walls + 58 + 2.5 + 2, btn_walls + height))
+
+    n1 = n1.fuse(n2)
+    n1 = n1.fuse(n3)
+
+    return n1
+
+def pcbStand(h=3.0):
+    c= Part.makeCylinder(1.4, h + 1.6)
+    # c.translate(Base.Vector(0, 0, h + 1.6/2))
+
+    b = Part.makeBox(2, 5, h)
+    b.translate(Base.Vector(-1, -2.5, 0));
+
+    fuse = b.fuse(c)
+    return fuse
+
+
+def createSubtractor(height, radius):
+  b= Part.makeBox(radius, radius, height) 
+  c= Part.makeCylinder(radius, height)
+  diff = b.cut(c)
+  return diff
+
+def rCube(l=50.0, w=70.0, h=50.0, r=2.5):
+
+    b = Part.makeBox(l, w, h)
+
+    m1 = Base.Matrix()
+    m2 = Base.Matrix()
+    m3 = Base.Matrix()
+    m4 = Base.Matrix()
+
+    sub1 = createSubtractor(h, r)
+    m1.move(Base.Vector(r, r, 0))
+    m1.rotateZ(math.pi)    
+    sub1.transformShape(m1)
+
+    sub2 = createSubtractor(h, r)
+    m2.move(Base.Vector(l-r, r, 0))
+    m2.rotateZ(-math.pi/2)    
+    sub2.transformShape(m2)
+
+    sub3 = createSubtractor(h, r)
+    m3.move(Base.Vector(r, w-r, 0))
+    m3.rotateZ(math.pi/2)    
+    sub3.transformShape(m3)
+
+    sub4 = createSubtractor(h, r)
+    m4.move(Base.Vector(l-r, w-r, 0))
+    m4.rotateZ(0)    
+    sub4.transformShape(m4)
+
+    diff = b.cut(sub1)
+    diff = diff.cut(sub2)
+    diff = diff.cut(sub3)
+    diff = diff.cut(sub4)
+
+    return diff
+
+def eCube(l=50.0, w=70.0, h=50.0, r=2.5, thickness = 2.5):
+
+    b = Part.makeBox(l, w, h)
+
+    m1 = Base.Matrix()
+    m2 = Base.Matrix()
+    m3 = Base.Matrix()
+    m4 = Base.Matrix()
+
+    sub1 = createSubtractor(h, r)
+    m1.move(Base.Vector(r, r, 0))
+    m1.rotateZ(math.pi)    
+    sub1.transformShape(m1)
+
+    sub2 = createSubtractor(h, r)
+    m2.move(Base.Vector(l-r, r, 0))
+    m2.rotateZ(-math.pi/2)    
+    sub2.transformShape(m2)
+
+    sub3 = createSubtractor(h, r)
+    m3.move(Base.Vector(r, w-r, 0))
+    m3.rotateZ(math.pi/2)    
+    sub3.transformShape(m3)
+
+    sub4 = createSubtractor(h, r)
+    m4.move(Base.Vector(l-r, w-r, 0))
+    m4.rotateZ(0)    
+    sub4.transformShape(m4)
+
+    diff = b.cut(sub1)
+    diff = diff.cut(sub2)
+    diff = diff.cut(sub3)
+    diff = diff.cut(sub4)
+
+    mx = Base.Matrix()
+    mx.move(Base.Vector(thickness, thickness, 0))
+    mx.rotateZ(math.pi)    
+
+    rc = rCube(l-2*thickness, w-2*thickness, h, r)
+    rc.translate(Base.Vector(thickness, thickness,0))
+
+    diff = diff.cut(rc)
+
+    return diff
+
+lock = 0;
+case = 1;
+
+rcorner = 4;
+walls = 2.5;
+btn_walls = 2; 
+top_walls = 2;
+height = 19;
+margin = 2.5;
+
+x_pcb = 92.10;
+y_pcb = 78.40;
+
+x_width = x_pcb + 2*walls + 2*margin;
+y_width = y_pcb + 2*walls + 2*margin;
+
+def makeCase(eth = 2):
+
+
+	bottom = rCube(x_width, y_width, btn_walls, rcorner)
+	bottom = Part.makeSolid(bottom)
+	
+	pcbStand1 = pcbStand(3)
+	pcbStand1.translate(Base.Vector(4.5, 4.5, 0))
+	
+	pcbStand2 = pcbStand(3)
+	pcbStand2.translate(Base.Vector(x_pcb - 4.5, 4.5, 0))
+	
+	pcbStand3 = pcbStand(3)
+	pcbStand3.translate(Base.Vector(x_pcb - 4.5, y_pcb - 4.5, 0))
+	
+	pcbStand4 = pcbStand(3)
+	pcbStand4.translate(Base.Vector(4.5, y_pcb - 4.5, 0))
+	
+	pcbStands = pcbStand1.fuse(pcbStand2)
+	pcbStands = pcbStands.fuse(pcbStand3)
+	pcbStands = pcbStands.fuse(pcbStand4)
+	pcbStands.translate(Base.Vector(walls + margin, walls + margin, btn_walls))
+	
+	bottom = bottom.fuse(pcbStands)
+	
+	pcbStands.translate(Base.Vector(walls + margin, walls + margin, btn_walls))
+	
+	wall = eCube(x_width, y_width, height + top_walls, rcorner, walls)
+	
+	hob = 3 + 1.6; 
+	xtra = 0.5;
+	
+	nmeaOutlet = Part.makeBox(walls, 16, height + top_walls - hob)
+	nmeaOutlet.translate(Base.Vector(x_width-walls, walls + margin + 7 + .25, hob + xtra))
+	
+	pwrOutlet = Part.makeBox(walls, 9.5, height + top_walls - hob)
+	pwrOutlet.translate(Base.Vector(x_width-walls, walls + margin + 58 + .25, hob + xtra))
+	
+	if eth > 0:
+		eth1Outlet = Part.makeBox(16.5, walls, 15)
+		eth1Outlet.translate(Base.Vector(walls + margin + 11 - 1.27, 0, hob - 0.5))
+		wall = wall.cut(eth1Outlet)
+	
+	if eth > 1:
+		eth2Outlet = Part.makeBox(16.5, walls, 15)
+		eth2Outlet.translate(Base.Vector(walls + margin + 33 - 1.27, 0, hob - 0.5))
+		wall = wall.cut(eth2Outlet)
+	
+	wall = wall.cut(nmeaOutlet)
+	wall = wall.cut(pwrOutlet)
+	
+	wall.translate(Base.Vector(0, 0, btn_walls));
+	
+	s = []
+	
+	# margin stands
+	# NMEA / PWR wall
+	b = Part.makeBox(2, 2, height)
+	b.translate(Base.Vector(x_width - walls - 2, walls + 3 + 16.5 + 10, btn_walls)) 
+	s.append(b)
+	
+	b = Part.makeBox(2, 2, height)
+	b.translate(Base.Vector(x_width - walls - 2, walls + 11 + 16.5 + 26, btn_walls))
+	s.append(b)
+	
+	# opposed to NMEA / PWR wall
+	b = Part.makeBox(2, 2, height - 10)
+	b.translate(Base.Vector(walls, 20, btn_walls)) 
+	s.append(b)
+	
+	b = Part.makeBox(2, 2, height - 10)
+	b.translate(Base.Vector(walls, 68, btn_walls)) 
+	s.append(b)
+	
+	collection = [10, 33, 40, 50, 57, 80]
+	for y in collection:
+	    b = Part.makeBox(2, 2, height)
+	    b.translate(Base.Vector(walls, y, btn_walls))
+	    s.append(b)
+	
+	# margin stands
+	collection = [10, 20, 30, 40, 50, 60, 70, 80, 90]
+	for x in collection:
+	    b = Part.makeBox(2, 2, height)
+	    b.translate(Base.Vector(x, y_width - walls - 2, btn_walls))
+	    s.append(b)
+	
+	# eth wall
+	b = Part.makeBox(2, 2, height)
+	b.translate(Base.Vector(walls + 13 + 16 + 3 - 2, walls, btn_walls))
+	s.append(b)
+	
+	# 58.5 = walls + 35 + 16 + 5
+	collection = [58.5, 68.5, 78.5, 88.5]
+	
+	for x in collection:
+	    b = Part.makeBox(2, 2, height)
+	    b.translate(Base.Vector(x, walls, btn_walls))
+	    s.append(b)
+	
+	for ss in s:
+	    wall = wall.fuse(ss)
+	
+	nl = noseAndLockins()
+	
+	Part.show(nl)
+	Part.show(wall)
+	Part.show(bottom)
+
+def topLock():
+
+	x_pcb = 91.60;
+	y_pcb = 78.40;
+	
+	x_width = x_pcb + 2*walls + 2*margin;
+	y_width = y_pcb + 2*walls + 2*margin;
+
+	plate = rCube(x_width - 2*walls, y_width - 2*walls, top_walls, rcorner)
+	plate.translate(Base.Vector(walls, walls, height + btn_walls)) 
+	
+	# this is for LED
+	l1 = Part.makeBox(1.5, 20, 1.5)
+	l1.translate(Base.Vector(x_pcb - 3 - 0.75, 29.5, height + top_walls - 1.5))
+
+	l2 = Part.makeBox(3, 20, 1.5)
+	l2.translate(Base.Vector(x_pcb - 4.5, 29.5, height + top_walls - 3))
+
+	l1 = l1.fuse(l2)
+	l1.translate(Base.Vector(walls + margin, walls + margin, btn_walls))
+	
+	plate = plate.cut(l1)
+	
+	# the parts described here (this is the lock) 
+	# will be cut-outs on the bottom part of the case
+
+	hob = 3 + 1.6; 
+	xtra = 0.5;
+	
+	# NMEA
+	nmea = Part.makeBox(walls, 15.5, height - hob - xtra + top_walls - 1)
+	nmea.translate(Base.Vector(x_width-walls, walls + margin + 7.5, btn_walls + hob + xtra + 1))
+	
+	# pwr
+	pwr = Part.makeBox(walls, 9.0, height - hob - xtra + top_walls - 1)
+	pwr.translate(Base.Vector(x_width-walls, walls + margin + 58.5, btn_walls + hob + xtra + 1))
+	
+	plate = plate.fuse(nmea)
+	plate = plate.fuse(pwr)
+	
+	
+	# led holder
+	# pcb 0,0 pos
+	
+	# 3mm from side is x mid pos of LED
+	p1 = Part.makeBox(6, 20, 3)
+	p1.translate(Base.Vector(x_pcb - 6, 29.5, height - 3))
+	p2 = Part.makeBox(3, 20, 3)
+	p2.translate(Base.Vector(x_pcb - 4.5, 29.5, height - 3))
+	p = p1.cut(p2)
+	p.translate(Base.Vector(walls + margin, walls + margin, btn_walls))
+
+	plate = plate.fuse(p)
+	
+	# two pilar for holding down the PCB
+	
+	c1 = Part.makeCylinder(2.5, height - hob);
+	c1.translate(Base.Vector(4.5, 4.5, 0))
+	
+	c2 = Part.makeCylinder(2.5, height - hob);
+	c2.translate(Base.Vector(x_pcb - 4.5, y_pcb - 4.5 - 2, 0))
+	c = c1.fuse(c2)
+	c.translate(Base.Vector(walls + margin, walls + margin, btn_walls + hob))
+
+	plate = plate.fuse(c)
+	
+	lock1 = lockins()
+	lock1.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0), 180)
+	lock1.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 270)
+	#	lock1.rotate() # rotate([180,0,270]) 
+	lock1.translate(Base.Vector(x_width - walls, 
+	    walls + 7 + 16.5 + 18 + 2.5 + 3, 
+	    btn_walls + height))
+
+	lock2 = lockins()
+	lock2.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0), 180)
+	lock2.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 90)
+	# lock2.rotate()       rotate([180, 0, 90]) nose_and_lockin(cube= 1);
+	lock2.translate(Base.Vector(walls, walls + 10 + 2.5 + 2, btn_walls + height))
+
+	lock3 = lockins()
+	lock3.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0), 180)
+	lock3.rotate(Base.Vector(0,0,0), Base.Vector(0,0,1), 90)
+	# rotate([180, 0, 90]) n	ose_and_lockin(cube= 1);
+  	lock3.translate(Base.Vector(walls, walls + 58 + 2.5 + 2, btn_walls + height))
+
+	plate = plate.fuse(lock1)
+	plate = plate.fuse(lock2)
+	plate = plate.fuse(lock3)
+
+	plate.rotate(Base.Vector(0,0,0), Base.Vector(1,0,0), 180)
+
+	Part.show(plate)
+
+topLock()
+
+# makeCase(1)
