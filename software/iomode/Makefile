@@ -15,6 +15,7 @@ include $(INCLUDE_DIR)/package.mk
 
 define Package/iomode
 	SECTION:=net
+	DEPENDS:=+io
 	CATEGORY:=Network
 	TITLE:=iomode sets desired io mode for RT305x UART/GPIO
 	MAINTAINER:=Bernd Ocklin <bernd@vyacht.net>
